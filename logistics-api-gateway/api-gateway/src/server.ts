@@ -5,21 +5,11 @@ import axios from "axios";
 import helmet from "helmet";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import morgan from "morgan";
+import healthCheckRouter from "./healthcheck";
 
 // Load environment variables from .env file
 dotenv.config();
 const PORT = process.env.PORT || 5001;
-
-import healthCheckRouter from "./healthcheck";
-
-
-//TODO: @Pasan - If the hosting plan doesnt support https use certbot to get a free ssl certificate
-
-interface Service {
-  req: any;
-  res: any;
-  next: any;
-}
 
 //Function for custom header
 function addCustomHeader(req: any, _res: any, next: any) {
@@ -35,9 +25,7 @@ app.use(helmet());
 app.use(morgan("combined"));
 app.disable("x-powered-by");
 app.use(addCustomHeader); // Apply the custom header middleware to the proxy
-
-// Mount the health check router at '/healthcheck'
-app.use('/healthcheck', healthCheckRouter);
+app.use('/healthcheck', healthCheckRouter); // Mount the health check router at '/healthcheck'
 
 // Define rate limit constants
 //TODO @Pasan - Change the rate limit to based on hosting plan
@@ -94,12 +82,12 @@ app.use(rateLimitAndTimeout);
 const services = [
   {
     route: "/user",
-    target: "http://localhost:5040/user", //TODO @Pasan - Replace this base url  with the hosted one
+    target: "http://ctse-user-balancer-824443805.eu-north-1.elb.amazonaws.com/user", 
     header: "API-Gateway",
   },
   {
     route: "/logistics",
-    target: "http://localhost:5050/logistic", //TODO @Pasan - Replace this base url  with the hosted one
+    target: "http://ctse-logistics-balancer-1446288631.eu-north-1.elb.amazonaws.com/logistic", 
     header: "API-Gateway",
   },
 ];
@@ -114,7 +102,7 @@ export async function CheckAuth(req: any, res: any, next: any) {
     try {
       // Send API call to check the token
       const response = await axios.post(
-        "http://localhost:5040/user/checkToken",
+        "http://ctse-user-balancer-824443805.eu-north-1.elb.amazonaws.com/user",
         {},
         {
           headers: {
